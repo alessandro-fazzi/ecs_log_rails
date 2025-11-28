@@ -67,7 +67,9 @@ GEM
       nokogiri (>= 1.12.0)
     minitest (6.0.1)
       prism (~> 1.5)
-    nokogiri (1.19.0-x86_64-linux-gnu)
+    nokogiri (1.19.2-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.2-x86_64-linux-gnu)
       racc (~> 1.4)
     pp (0.6.3)
       prettyprint
@@ -121,6 +123,7 @@ GEM
     zeitwerk (2.7.4)
 
 PLATFORMS
+  arm64-darwin-25
   x86_64-linux
 
 DEPENDENCIES
