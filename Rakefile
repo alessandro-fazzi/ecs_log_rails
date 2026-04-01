@@ -1,12 +1,13 @@
+require "bundler/setup"
 require "bundler/gem_tasks"
 require "rake/clean"
-require "rake/testtask"
+require "minitest/test_task"
 
-Rake::TestTask.new do |t|
+Minitest::TestTask.create(:test) do |t|
   t.libs << "test"
-  t.pattern = "test/**/*_test.rb"
-  t.verbose = true
+  t.libs << "lib"
   t.warning = false
+  t.test_globs = ["test/**/*_test.rb"]
 end
 
 desc "Run tests"

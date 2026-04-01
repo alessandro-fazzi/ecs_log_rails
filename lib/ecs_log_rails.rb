@@ -1,5 +1,6 @@
 require "lograge"
 require "ecs_log_rails/ecs_formatter"
+require "ecs_log_rails/active_job/log_correlation" if defined?(ActiveJob)
 
 module EcsLogRails
   module_function
@@ -32,13 +33,7 @@ module EcsLogRails
       }
 
       if ecs_log_rails_config.log_correlation
-        # Note: ElasticAPM.log_ids can yield nil values, or an empty string if called without a block,
-        # when there's no active transaction/span. We use this signature to have more control.
-        ElasticAPM.log_ids do |transaction_id, span_id, trace_id|
-          options[:apm_transaction_id] = transaction_id if transaction_id
-          options[:apm_span_id] = span_id if span_id
-          options[:apm_trace_id] = trace_id if trace_id
-        end
+        options.merge EcsLogRails.log_correlation_data
       end
 
       options
@@ -89,9 +84,34 @@ module EcsLogRails
     return unless ecs_log_rails_config.log_correlation
 
     unless defined?(ElasticAPM)
-      raise "EcsLogRails log_correlation is enabled but ElasticAPM is not defined. " \
-            "Please add 'elastic-apm' gem to your Gemfile to be able to use log_correlation."
+      raise ElasticAPMNotDefinedError
     end
+  end
+
+  def log_correlation_data
+    unless defined?(ElasticAPM)
+      raise ElasticAPMNotDefinedError
+    end
+
+    # Note: ElasticAPM.log_ids can yield nil values, or an empty string if called without a block,
+    # when there's no active transaction/span. We use this signature to have more control.
+    _elastic_apm_module.log_ids do |transaction_id, span_id, trace_id|
+      {
+        apm_transaction_id: transaction_id,
+        apm_span_id: span_id,
+        apm_trace_id: trace_id
+      }.compact
+    end
+  end
+
+  # This extraction is just to welcome test utilities.
+  def _elastic_apm_module
+    ::ElasticAPM
+  end
+
+  class ElasticAPMNotDefinedError < StandardError
+    def message = "EcsLogRails log_correlation is enabled but ElasticAPM is not defined. " \
+      "Please add 'elastic-apm' gem to your Gemfile to be able to use log_correlation."
   end
 end
 require "ecs_log_rails/railtie" if defined?(Rails)
